@@ -30,6 +30,9 @@ flick-2048
 
 # Gesture demo (Requires Raspberry Pi Sense HAT)
 flick-sense
+
+# Run a script to stream gestures data via OSC. IP: local host. Port: 5000.
+flick-osc
 ```
 
 # Hardware tips
