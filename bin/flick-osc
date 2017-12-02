@@ -1,0 +1,244 @@
+#!/usr/bin/env python
+
+import signal
+import flicklib
+import time
+import curses
+import OSC
+
+from curses import wrapper
+
+some_value = 5000
+
+c = OSC.OSCClient()
+c.connect(('127.0.0.1', 5000))
+
+@flicklib.move()
+def move(x, y, z):
+    global xyztxt
+    global xyz
+
+    xyztxt = '{:5.3f} {:5.3f} {:5.3f}'.format(x,y,z)
+    xyz = [x,y,z]
+
+    xyzmsg = OSC.OSCMessage()
+    xyzmsg.setAddress("/xyz")
+    xyzmsg.append(xyz)
+    c.send(xyzmsg)
+
+@flicklib.flick()
+def flick(start,finish):
+    global flicktxt
+    global flickint
+    global flickinttxt
+    flicktxt = start + ' - ' + finish
+    
+    if (start == 'west') and (finish == 'east') : flickint = 1
+    elif (start == 'east') and (finish == 'west') : flickint = 2
+    elif (start == 'north') and(finish == 'south') : flickint = 3
+    elif (start == 'south') and (finish == 'north') : flickint = 4
+    
+    flickinttxt = str(flickint)
+
+    flickmsg = OSC.OSCMessage()
+    flickmsg.setAddress("/flick")
+    flickmsg.append(flickint)
+    c.send(flickmsg)
+    
+@flicklib.airwheel()
+def spinny(delta):
+    global some_value
+    global airwheeltxt
+    global airwheel
+    some_value += delta
+    if some_value < 0:
+        some_value = 0
+    if some_value > 10000:
+        some_value = 10000
+    airwheel = some_value/100
+    airwheeltxt = str(airwheel)
+
+    airwheelmsg = OSC.OSCMessage()
+    airwheelmsg.setAddress("/airwheel")
+    airwheelmsg.append(airwheel)
+    c.send(airwheelmsg)
+
+@flicklib.double_tap()
+def doubletap(position):
+    global doubletaptxt
+    global doubletapint
+    global doubletapinttxt
+    doubletaptxt = position
+    
+    if position == 'center' : doubletapint = 1
+    elif position == 'west' : doubletapint = 2
+    elif position == 'east' : doubletapint = 3
+    elif position == 'north' : doubletapint = 4
+    elif position == 'south' : doubletapint = 5
+    
+    doubletapinttxt = str(doubletapint)
+
+    doubleTapmsg = OSC.OSCMessage()
+    doubleTapmsg.setAddress("/doubleTap")
+    doubleTapmsg.append(doubletapint)
+    c.send(doubleTapmsg)
+
+@flicklib.tap()
+def tap(position):
+    global taptxt
+    taptxt = position
+
+    global tapint
+    global tapinttxt
+    
+    if position == 'center' : tapint = 1
+    elif position == 'west' : tapint = 2
+    elif position == 'east' : tapint = 3
+    elif position == 'north' : tapint = 4
+    elif position == 'south' : tapint = 5
+    
+    tapinttxt = str(tapint)
+
+    tapmsg = OSC.OSCMessage()
+    tapmsg.setAddress("/tap")
+    tapmsg.append(tapint)
+    c.send(tapmsg)
+
+@flicklib.touch()
+def touch(position):
+    global touchtxt
+    global touchint
+    global touchinttxt
+    touchtxt = position
+    
+    if position == 'center' : touchint = 1
+    elif position == 'west' : touchint = 2
+    elif position == 'east' : touchint = 3
+    elif position == 'north' : touchint = 4
+    elif position == 'south' : touchint = 5
+    touchinttxt = str(touchint)
+
+    touchmsg = OSC.OSCMessage()
+    touchmsg.setAddress("/touch")
+    touchmsg.append(touchint)
+    c.send(touchmsg)
+
+#
+# Main display using curses
+#
+
+def main(stdscr):
+    global xyz
+    global xyztxt
+    global flickint
+    global flickinttxt
+    global flicktxt
+    global airwheeltxt
+    global airwheel
+    global touchtxt
+    global touch
+    global touchinttxt
+    global touchint
+    global taptxt
+    global touchint
+    global tap
+    global tapint
+    global tapinttxt
+    global doubletaptxt
+    global doubletapinttxt
+    global doubleTap
+
+    xyz = [0, 0, 0]
+    xyztxt = ''
+    flicktxt = ''
+    flickint = 0
+    flickinttxt = ''
+    flickcount = 0
+    airwheeltxt = ''
+    airwheelcount = 0
+    touchtxt = ''
+    touchint = 0;
+    touchinttxt = ''
+    touchcount = 0
+    taptxt = ''
+    tapinttxt = ''
+    tapcount = 0
+    doubletaptxt = ''
+    doubletapinttxt = ''
+    doubletapcount = 0
+    
+    # Clear screen and hide cursor
+    stdscr.clear()
+    curses.curs_set(0)
+
+    # Add title and footer
+    exittxt = 'Control-C to exit'
+    title = '**** Flick OSC ****'
+    stdscr.addstr( 0, (curses.COLS - len(title)) / 2, title)
+    stdscr.addstr(22, (curses.COLS - len(exittxt)) / 2, exittxt)
+    stdscr.refresh()
+
+    fw_info = flicklib.getfwinfo()
+
+    datawin = curses.newwin( 8, curses.COLS - 6,  2, 3)
+    oscwin   = curses.newwin(10, curses.COLS - 6, 11, 3)
+
+    # Update data window continuously until Control-C
+    while True:
+        oscwin.erase()
+        oscwin.border()
+        oscwin.addstr(1, 2, 'Sender IP: 127.0.0.1 - PORT: 5000')
+        oscwin.addstr(2, 2, '')
+        oscwin.addstr(3, 2, '/xyz   ' + xyztxt)
+        oscwin.addstr(4, 2, '/flick ' + flickinttxt)
+        oscwin.addstr(5, 2, '/airwheel ' + airwheeltxt)
+        oscwin.addstr(6, 2, '/touch ' + touchinttxt)
+        oscwin.addstr(7, 2, '/tap ' + tapinttxt)
+        oscwin.addstr(8, 2, '/doubleTap ' + doubletapinttxt)
+        oscwin.refresh()
+    
+        datawin.erase()
+        datawin.border()
+        datawin.addstr(1, 2, 'X Y Z     : ' + xyztxt)
+        datawin.addstr(2, 2, 'Flick     : ' + flicktxt)
+        datawin.addstr(3, 2, 'Airwheel  : ' + airwheeltxt)
+        datawin.addstr(4, 2, 'Touch     : ' + touchtxt)
+        datawin.addstr(5, 2, 'Tap       : ' + taptxt)
+        datawin.addstr(6, 2, 'Doubletap : ' + doubletaptxt)
+        datawin.refresh()
+
+        xyztxt = ''
+
+        if len(flicktxt) > 0 and flickcount < 5:
+            flickcount += 1
+        else:
+            flicktxt = ''
+            flickcount = 0
+
+        if len(airwheeltxt) > 0 and airwheelcount < 5:
+            airwheelcount += 1
+        else:
+            airwheeltxt = ''
+            airwheelcount = 0
+
+        if len(touchtxt) > 0 and touchcount < 5:
+            touchcount += 1
+        else:
+            touchtxt = ''
+            touchcount = 0
+
+        if len(taptxt) > 0 and tapcount < 5:
+            tapcount += 1
+        else:
+            taptxt = ''
+            tapcount = 0
+
+        if len(doubletaptxt) > 0 and doubletapcount < 5:
+            doubletapcount += 1
+        else:
+            doubletaptxt = ''
+            doubletapcount = 0
+
+        time.sleep(0.1)
+
+wrapper(main)
