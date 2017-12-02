@@ -32,6 +32,8 @@ flick-2048
 flick-sense
 
 # Run a script to stream gestures data via OSC. IP: local host. Port: 5000.
+# Dependecies: pyOSC
+
 flick-osc
 ```
 

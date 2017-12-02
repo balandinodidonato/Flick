@@ -1,0 +1,36 @@
+#N canvas 461 491 533 352 10;
+#X obj 21 92 oscparse;
+#X obj 21 114 list trim;
+#X obj 21 158 unpack f f f;
+#X floatatom 21 180 5 0 0 3 x - -, f 5;
+#X floatatom 64 180 5 0 0 3 y - -, f 5;
+#X floatatom 107 180 5 0 0 3 z - -, f 5;
+#X floatatom 265 180 5 0 0 3 touch - -, f 5;
+#X floatatom 197 180 5 0 0 3 airwheel - -, f 5;
+#X floatatom 322 180 5 0 0 3 tap - -, f 5;
+#X floatatom 150 180 5 0 0 3 flick - -, f 5;
+#X floatatom 373 180 5 0 0 3 double_tap - -, f 5;
+#X obj 21 136 route xyz flick airwheel touch tap doubleTap;
+#X obj 21 70 netreceive -u -b 5000;
+#X text 19 285 Airwheel values are float numbers betwen 0 and 100;
+#X text 21 237 x \, y \, z values are float numbers betwen 0 and 1
+;
+#X text 20 254 flick values are: 1 (west to east) \, 2 (east to west)
+\, 3 (north to south) \, 4 (south to north).;
+#X text 18 302 Touch/tap/double tap values are: 1 (center) \, 2 (west)
+\, 3 (east) \, 4 (north) \, 5 (south).;
+#X text 13 14 Receive messages from Flick sensor via OSC at the port
+5000 messages are received at each interaction with the Flick sensor.
+For more info: balandinodidonato.com/flick-osc;
+#X connect 0 0 1 0;
+#X connect 1 0 11 0;
+#X connect 2 0 3 0;
+#X connect 2 1 4 0;
+#X connect 2 2 5 0;
+#X connect 11 0 2 0;
+#X connect 11 1 9 0;
+#X connect 11 2 7 0;
+#X connect 11 3 6 0;
+#X connect 11 4 8 0;
+#X connect 11 5 10 0;
+#X connect 12 0 0 0;
